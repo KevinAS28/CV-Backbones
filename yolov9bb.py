@@ -31,6 +31,7 @@ class YoloV9BackBone(nn.Module):
         ]
         self.pyramids = [pyr.to(device) for pyr in pyramids]
         # self.yolov9bb_layers = nn.Sequential(self.pyramid0, self.pyramid1, self.pyramid2, self.pyramid3, self.pyramid4)
+        self.to(device)
         
     def forward(self, x):
         results = []
