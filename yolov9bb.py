@@ -1,6 +1,6 @@
-from commons import *
+from commons_pt import *
 
-class YoloV9BackBone(nn.Module):
+class YoloV9Backbone(nn.Module):
     def __init__(self, c=[3, 64, 128, 256, 512, 1024, 2048], return_idx=[2,3,4], device='cuda' if torch.cuda.is_available() else 'cpu'):
         super().__init__()
         self.return_idx = return_idx
@@ -32,7 +32,7 @@ class YoloV9BackBone(nn.Module):
         self.pyramids = [pyr.to(device) for pyr in pyramids]
         # self.yolov9bb_layers = nn.Sequential(self.pyramid0, self.pyramid1, self.pyramid2, self.pyramid3, self.pyramid4)
         self.to(device)
-        
+
     def forward(self, x):
         results = []
         for i in range(self.return_idx[-1]+1):
