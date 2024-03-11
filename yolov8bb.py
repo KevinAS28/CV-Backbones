@@ -1,6 +1,6 @@
 from commons import *
 
-class ModifiedBackbone(nn.Module):
+class Yolov8Backbone(nn.Module):
     def __init__(self, channels, depths, deep_mul, phi, pretrained=False):
         super().__init__()
         #------------------------------------------------#
