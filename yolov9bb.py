@@ -6,35 +6,44 @@ class YoloV9Backbone(nn.Module):
         self.return_idx = return_idx
 
         # 3-> 64
-        silence = Silence()
-        conv0 = Conv(c[0], c[1], 3, 2)
-
-        # 64
-        conv1 = Conv(c[1], c[2], 3, 2)
-        rncelan0 = RepNCSPELAN4(c[2], c[3], c[2], c[1], 1)
-
-        conv2 = Conv(c[3], c[4], 3, 2)
-        rncelan1 = RepNCSPELAN4(c[4], c[4], c[4], c[2], 1)
-
-        conv3 = Conv(c[4], c[5], 3, 2)
-        rncelan2 = RepNCSPELAN4(c[5], c[5], c[5], c[2], 1)
-
-        conv4 = Conv(c[5], c[6], 3, 2)
-        rncelan3 = RepNCSPELAN4(c[6], c[6], c[6], c[2], 1)
         
         self.pyramids = nn.Sequential(
-            nn.Sequential(silence, conv0),
-            nn.Sequential(conv1, rncelan0),
-            nn.Sequential(conv2, rncelan1),
-            nn.Sequential(conv3, rncelan2),
-            nn.Sequential(conv4, rncelan3),
-        )
+            nn.Sequential(
+                Silence(),
+                Conv(c[0], c[1], 3, 2)                
+            )
+        )        
+        last_up_c_i = 1
+        for ch_i in range(2, len(c), 2):
+            curr_c = c[ch_i]
+            prev_c = c[ch_i-1]
+            if (curr_c==prev_c) or ((ch_i+1)==len(c)):
+                self.pyramids.append(
+                    nn.Sequential(
+                        Conv(prev_c, curr_c, 3, 2),
+                        RepNCSPELAN4(curr_c, next_c, curr_c, c[last_up_c_i], 1)
+                    )
+                )
 
+                print(f'Conv{(prev_c, curr_c, 3, 2)}')
+                print(f'RepNCSPELAN4{(curr_c, next_c, curr_c, c[last_up_c_i], 1)}')
+            else:
+                next_c = c[ch_i+1]
+                self.pyramids.append(
+                    nn.Sequential(
+                        Conv(prev_c, curr_c, 3, 2),
+                        RepNCSPELAN4(curr_c, next_c, curr_c, prev_c, 1)
+                    )
+                )
+                last_up_c_i = ch_i
+                print(f'Conv{(prev_c, curr_c, 3, 2)}')
+                print(f'RepNCSPELAN4{(curr_c, next_c, curr_c, prev_c, 1)}')
         # self.yolov9bb_layers = nn.Sequential(self.pyramid0, self.pyramid1, self.pyramid2, self.pyramid3, self.pyramid4)
-
+        print('pyramids length:', len(self.pyramids))
     def forward(self, x):
         results = []
         for i in range(self.return_idx[-1]+1):
+            print('forward', i)
             pyr = self.pyramids[i]
             x = pyr(x)
             if i in self.return_idx:
@@ -42,7 +51,9 @@ class YoloV9Backbone(nn.Module):
         return results
 
 if __name__=='__main__':
+    x = torch.randn(1, 3, 640, 640)
     model = YoloV9Backbone()
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     print(params)
+    print([i.shape for i in model(x)])
