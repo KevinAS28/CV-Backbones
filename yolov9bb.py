@@ -1,7 +1,7 @@
 from commons_pt import *
 
 class YoloV9Backbone(nn.Module):
-    def __init__(self, c=[3, 64, 128, 256, 512, 1024, 2048], return_idx=[2,3,4], device='cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, c=[3, 64, 128, 256, 512, 1024, 2048], return_idx=[2,3,4]):
         super().__init__()
         self.return_idx = return_idx
 
@@ -22,16 +22,15 @@ class YoloV9Backbone(nn.Module):
         conv4 = Conv(c[5], c[6], 3, 2)
         rncelan3 = RepNCSPELAN4(c[6], c[6], c[6], c[2], 1)
         
-        pyramids = [
+        self.pyramids = nn.Sequential(
             nn.Sequential(silence, conv0),
             nn.Sequential(conv1, rncelan0),
             nn.Sequential(conv2, rncelan1),
             nn.Sequential(conv3, rncelan2),
             nn.Sequential(conv4, rncelan3),
-        ]
-        self.pyramids = [pyr.to(device) for pyr in pyramids]
+        )
+
         # self.yolov9bb_layers = nn.Sequential(self.pyramid0, self.pyramid1, self.pyramid2, self.pyramid3, self.pyramid4)
-        self.to(device)
 
     def forward(self, x):
         results = []
@@ -41,3 +40,9 @@ class YoloV9Backbone(nn.Module):
             if i in self.return_idx:
                 results.append(x)
         return results
+
+if __name__=='__main__':
+    model = YoloV9Backbone()
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(params)

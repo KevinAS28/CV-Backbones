@@ -234,12 +234,12 @@ class Blocks(nn.Module):
 class PResNet(nn.Module):
     def __init__(
         self, 
-        depth,  
+        depth=101,  
         variant='d', 
         num_stages=4, 
-        return_idx=[0, 1, 2, 3], 
+        return_idx=[1, 2, 3], 
         act='relu',
-        freeze_at=-1, 
+        freeze_at=0, 
         freeze_norm=True, 
         pretrained=False):
         super().__init__()
