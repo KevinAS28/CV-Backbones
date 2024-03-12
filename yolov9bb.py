@@ -1,7 +1,7 @@
 from commons_pt import *
 
 class YoloV9Backbone(nn.Module):
-    def __init__(self, c=[3, 64, 128, 256, 512, 1024, 2048], return_idx=[2,3,4]):
+    def __init__(self, c=[3, 64, 128, 256, 512, 1024, 2048], return_idx=[1,2,3]):
         super().__init__()
         self.return_idx = return_idx
 
