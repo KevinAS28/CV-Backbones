@@ -1,7 +1,7 @@
 from commons_pt import *
 
 class Yolov8Backbone(nn.Module):
-    def __init__(self, channels, depths, deep_mul, phi, pretrained=False):
+    def __init__(self, channels, depths, phi, pretrained=False):
         super().__init__()
         #------------------------------------------------#
         #The input image is 3, 640, 640
