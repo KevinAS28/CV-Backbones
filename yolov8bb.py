@@ -1,7 +1,7 @@
 from commons_pt import *
 
-class Yolov8Backbone(nn.Module):
-    def __init__(self, channels=[3, 64, 256, 512, 1024, 2048], depths=[3,6,6], phi=-1, pretrained=False):
+class YoloV8Backbone(nn.Module):
+    def __init__(self, channels=[3, 16, 32, 64, 128, 256], depths=[1,2,2], phi=-1, pretrained=False):
         super().__init__()
         #------------------------------------------------#
         #The input image is 3, 640, 640
@@ -62,3 +62,19 @@ class Yolov8Backbone(nn.Module):
         x = self.dark5(x)
         feat3 = x
         return feat1, feat2, feat3
+
+def mulp(x):
+    res = x[0]
+    for i in x[1:]:
+        res*=i
+    return res
+
+if __name__=='__main__':
+    x = torch.randn(1, 3, 640, 640)
+    model = YoloV8Backbone()
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(params)
+    out = model(x)
+    print([i.shape for i in out])
+    print(mulp([x for i in out for j in i for x in j.shape]))

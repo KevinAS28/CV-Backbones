@@ -1,5 +1,7 @@
 '''by lyuwenyu
 '''
+import numpy as np
+
 import torch
 import torch.nn as nn 
 import torch.nn.functional as F 
@@ -315,3 +317,11 @@ class PResNet(nn.Module):
         return outs
 
 
+if __name__=='__main__':
+    device = 'cuda'
+    x = torch.randn(1, 3, 640, 640)
+    model = PResNet()
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(params)
+    print([i.shape for i in model(x)])
