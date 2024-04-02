@@ -271,5 +271,47 @@ class FrozenBatchNorm2d(nn.Module):
             "{num_features}, eps={eps}".format(**self.__dict__)
         )
 
+class ADown(nn.Module):
+    def __init__(self, c1, c2):  # ch_in, ch_out, shortcut, kernels, groups, expand
+        super().__init__()
+        self.c1 = c1
+        self.c2 = c2
+        self.c = c2 // 2
+        self.cv1 = Conv(c1 // 2, self.c, 3, 2, 1)
+        self.cv2 = Conv(c1 // 2, self.c, 1, 1, 0)
 
+    def forward(self, x):
+        x = torch.nn.functional.avg_pool2d(x, 2, 1, 0, False, True)
+        x1,x2 = x.chunk(2, 1)
+        x1 = self.cv1(x1)
+        x2 = torch.nn.functional.max_pool2d(x2, 3, 2, 1)
+        x2 = self.cv2(x2)
+        return torch.cat((x1, x2), 1)
+    
+    def __str__(self):
+        return f'ADown(c1={self.c1}, c2={self.c2})'
 
+class CBFuse(nn.Module):
+    def __init__(self, idx):
+        super(CBFuse, self).__init__()
+        self.idx = idx
+
+    def forward(self, xs):
+        target_size = xs[-1].shape[2:]
+        res = [F.interpolate(x[self.idx[i]], size=target_size, mode='nearest') for i, x in enumerate(xs[:-1])]
+        out = torch.sum(torch.stack(res + xs[-1:]), dim=0)
+        return out
+
+    def __str__(self):
+        return f'CBFuse({self.idx})'
+
+class CBLinear(nn.Module):
+    def __init__(self, c1, c2s, k=1, s=1, p=None, g=1):  # ch_in, ch_outs, kernel, stride, padding, groups
+        super(CBLinear, self).__init__()
+        self.module_args = [c1, c2s, 1, 1, None, 1]
+        self.c2s = c2s
+        self.conv = nn.Conv2d(c1, sum(c2s), k, s, autopad(k, p), groups=g, bias=True)
+
+    def forward(self, x):
+        outs = self.conv(x).split(self.c2s, dim=1)
+        return outs

@@ -320,7 +320,7 @@ class PResNet(nn.Module):
 if __name__=='__main__':
     device = 'cuda'
     x = torch.randn(1, 3, 640, 640)
-    model = PResNet()
+    model = PResNet(101)
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     print(params)

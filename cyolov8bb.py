@@ -1,34 +1,34 @@
 from commons_pt import *
 
 class YoloV8Backbone(nn.Module):
-    def __init__(self, base_channels=64, base_depth=3, deep_mul=0.5, phi=0.5, pretrained=True):
+    def __init__(self, channels=[3, 16, 32, 64, 128, 256], depths=[1,2,2], phi=-1, pretrained=False):
         super().__init__()
+        #------------------------------------------------#
+        #The input image is 3, 640, 640
+        #------------------------------------------------#
         # 3, 640, 640 => 32, 640, 640 => 64, 320, 320
-        self.stem = Conv(3, base_channels, 3, 2)
+        self.stem = Conv(channels[0], channels[1], 3, 2)
         
         # 64, 320, 320 => 128, 160, 160 => 128, 160, 160
         self.dark2 = nn.Sequential(
-            Conv(base_channels, base_channels * 2, 3, 2),
-            C2f(base_channels * 2, base_channels * 2, base_depth, True),
+            Conv(channels[1], channels[2], 3, 2),
+            C2f(channels[2], channels[2] , depths[0], True),
         )
-
         # 128, 160, 160 => 256, 80, 80 => 256, 80, 80
         self.dark3 = nn.Sequential(
-            Conv(base_channels * 2, base_channels * 4, 3, 2),
-            C2f(base_channels * 4, base_channels * 4, base_depth * 2, True),
+            Conv(channels[2], channels[3], 3, 2),
+            C2f(channels[3], channels[3], depths[1], True),
         )
-
         # 256, 80, 80 => 512, 40, 40 => 512, 40, 40
         self.dark4 = nn.Sequential(
-            Conv(base_channels * 4, base_channels * 8, 3, 2),
-            C2f(base_channels * 8, base_channels * 8, base_depth * 2, True),
+            Conv(channels[3] , channels[4], 3, 2),
+            C2f(channels[4], channels[4], depths[2], True),
         )
-
         # 512, 40, 40 => 1024 * deep_mul, 20, 20 => 1024 * deep_mul, 20, 20
         self.dark5 = nn.Sequential(
-            Conv(base_channels * 8, int(base_channels * 16 * deep_mul), 3, 2),
-            C2f(int(base_channels * 16 * deep_mul), int(base_channels * 16 * deep_mul), base_depth, True),
-            SPPF(int(base_channels * 16 * deep_mul), int(base_channels * 16 * deep_mul), k=5)
+            Conv(channels[4], channels[5], 3, 2),
+            C2f(channels[5], channels[5], depths[0], True),
+            SPPF(channels[5], channels[5], k=5)
         )
         
         if pretrained:
@@ -63,12 +63,18 @@ class YoloV8Backbone(nn.Module):
         feat3 = x
         return feat1, feat2, feat3
 
+def mulp(x):
+    res = x[0]
+    for i in x[1:]:
+        res*=i
+    return res
 
 if __name__=='__main__':
-    model = YoloV8Backbone(64, 3, 0.5, 'l', True)
+    x = torch.randn(1, 3, 640, 640)
+    model = YoloV8Backbone([3, 64, 256, 512, 512, 1024])
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
-    print(params)    
-    x = torch.randn(1, 3, 640, 640)
+    print(params)
     out = model(x)
     print([i.shape for i in out])
+    print(mulp([x for i in out for j in i for x in j.shape]))
